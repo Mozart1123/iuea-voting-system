@@ -94,7 +94,7 @@
         <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-primary flex flex-col transition-transform duration-300 transform -translate-x-full md:translate-x-0 z-30 shadow-2xl">
             <div class="p-6 border-b border-white/10">
                 <a href="{{ url('/') }}" class="flex items-center space-x-3">
-                    <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center overflow-hidden p-1">
+                    <div class="w-20 h-16 bg-white rounded-lg flex items-center justify-center overflow-hidden p-1">
                         <img src="https://iuea.ac.ug/sitepad-data/uploads/2024/07/IUEA-Logo-official-1.png" alt="IUEA Logo" class="w-full h-full object-contain">
                     </div>
                     <span class="font-bold text-xl tracking-tight text-white">IUEA <span class="text-white/80">GuildVote</span></span>

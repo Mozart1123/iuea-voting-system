@@ -110,7 +110,7 @@
         <div class="container mx-auto px-6 py-4">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-3">
-                    <img src="https://iuea.ac.ug/sitepad-data/uploads/2024/07/IUEA-Logo-official-1.png" alt="IUEA Logo" class="w-16 h-16 object-contain">
+                    <img src="https://iuea.ac.ug/sitepad-data/uploads/2024/07/IUEA-Logo-official-1.png" alt="IUEA Logo" class="w-24 h-20 object-contain">
         
                 </div>
                 
@@ -524,7 +524,7 @@
             <div class="flex flex-col md:flex-row justify-between items-start gap-10">
                 <div class="max-w-xs">
                     <div class="flex items-center space-x-3 mb-4">
-                        <img src="https://iuea.ac.ug/sitepad-data/uploads/2024/07/IUEA-Logo-official-1.png" alt="IUEA Logo" class="w-20 h-20 object-contain brightness-0 invert">
+                        <img src="https://iuea.ac.ug/sitepad-data/uploads/2024/07/IUEA-Logo-official-1.png" alt="IUEA Logo" class="w-28 h-20 object-contain brightness-0 invert">
                         <span class="font-bold text-xl text-white">IUEA <span class="text-red-400">GuildVote</span></span>
                     </div>
                     <p class="text-sm leading-relaxed text-gray-200">Official voting platform for the International University of East Africa. Secure, transparent, trusted.</p>

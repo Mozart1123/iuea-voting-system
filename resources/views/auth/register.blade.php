@@ -11,9 +11,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary: #b22222;
-            --primary-dark: #8a1a1a;
-            --primary-light: #d13a3a;
+            --primary: #8B0000;
+            --primary-dark: #660000;
+            --primary-light: #A52A2A;
         }
         * {
             font-family: 'Inter', sans-serif;
@@ -29,7 +29,7 @@
         .hover\:text-primary:hover { color: var(--primary); }
         
         .gradient-left {
-            background: linear-gradient(145deg, #8a1a1a 0%, #b22222 100%);
+            background: linear-gradient(145deg, #660000 0%, #8B0000 100%);
         }
     </style>
 </head>
@@ -41,7 +41,7 @@
         
         <div class="relative z-10">
             <div class="flex items-center space-x-3 mb-12">
-                <img src="https://iuea.ac.ug/sitepad-data/uploads/2024/07/IUEA-Logo-official-1.png" alt="IUEA Logo" class="w-16 h-16 object-contain brightness-0 invert">
+                <img src="https://iuea.ac.ug/sitepad-data/uploads/2024/07/IUEA-Logo-official-1.png" alt="IUEA Logo" class="w-20 h-20 object-contain brightness-0 invert">
                 <span class="font-bold text-2xl tracking-tight">IUEA <span class="font-extrabold">GuildVote</span></span>
             </div>
             
@@ -154,7 +154,7 @@
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
 
-                <button type="submit" class="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:bg-[#8a1a1a] transition duration-200">
+                <button type="submit" class="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:bg-primary-dark transition duration-200">
                     Create Voter Profile
                 </button>
                 

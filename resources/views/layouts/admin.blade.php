@@ -69,7 +69,7 @@
     <!-- Admin Sidebar -->
     <aside class="w-20 lg:w-72 sidebar-theme flex flex-col transition-all duration-300 overflow-hidden shrink-0">
         <div class="p-6 flex items-center justify-center lg:justify-start gap-4 mb-10 text-white">
-            <div class="w-20 h-20 rounded-2xl bg-white flex items-center justify-center shadow-lg shrink-0 overflow-hidden p-2">
+            <div class="w-24 h-24 rounded-2xl bg-white flex items-center justify-center shadow-lg shrink-0 overflow-hidden p-2">
                 <img src="https://iuea.ac.ug/sitepad-data/uploads/2024/07/IUEA-Logo-official-1.png" alt="IUEA Logo" class="w-full h-full object-contain">
             </div>
             <div class="hidden lg:block">

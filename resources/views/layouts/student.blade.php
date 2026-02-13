@@ -14,7 +14,7 @@
         :root {
             --iuea-primary: #8b0000;
             --iuea-primary-dark: #660000;
-            --iuea-primary-light: #b22222;
+            --iuea-primary-light: #A52A2A;
         }
         
         * {
@@ -82,7 +82,7 @@
     <aside class="w-72 sidebar-theme border-r border-black/5 hidden lg:flex flex-col shrink-0">
         <div class="p-8 text-white">
             <div class="flex items-center space-x-3 mb-12">
-                <div class="w-20 h-20 rounded-2xl bg-white flex items-center justify-center shadow-lg overflow-hidden shrink-0 p-2">
+                <div class="w-24 h-24 rounded-2xl bg-white flex items-center justify-center shadow-lg overflow-hidden shrink-0 p-2">
                     <img src="https://iuea.ac.ug/sitepad-data/uploads/2024/07/IUEA-Logo-official-1.png" alt="IUEA Logo" class="w-full h-full object-contain">
                 </div>
                 <h1 class="text-xl font-black tracking-tighter text-white">IUEA <span class="opacity-60">VOTE</span></h1>
