@@ -25,8 +25,8 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'student_id' => strtoupper(fake()->bothify('##/U/####/??')),
+            'email' => fake()->unique()->userName() . fake()->numberBetween(100, 999999) . '@iuea.ac.ug',
+            'student_id' => strtoupper(fake()->unique()->bothify('ST-####-')) . bin2hex(random_bytes(2)),
             'faculty' => fake()->randomElement(['Science & Technology', 'Business & Law', 'Medicine', 'Education']),
             'role' => 'student',
             'is_admin' => false,
