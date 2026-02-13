@@ -172,5 +172,58 @@
             </div>
         </div>
     </div>
+    <!-- GSAP for Premium Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
+
+            tl.from(".gradient-left", { xPercent: -100, duration: 1.2 })
+              .from(".md-w-1-2.bg-white", { xPercent: 100, duration: 1.2 }, "-=1.2")
+              .from(".relative.z-10 > div", { 
+                  y: 40, 
+                  opacity: 0, 
+                  stagger: 0.2, 
+                  duration: 1 
+              }, "-=0.5")
+              .from("form > div", { 
+                  y: 20, 
+                  opacity: 0, 
+                  stagger: 0.1, 
+                  duration: 0.8 
+              }, "-=0.8")
+              .from("form button", { 
+                  scale: 0.9, 
+                  opacity: 0, 
+                  duration: 0.5 
+              }, "-=0.3");
+
+            gsap.to("img[alt='IUEA Logo']", {
+                y: -10,
+                duration: 2,
+                repeat: -1,
+                yoyo: true,
+                ease: "sine.inOut"
+            });
+
+            const pattern = document.querySelector('.absolute.inset-0.opacity-5');
+            document.addEventListener('mousemove', (e) => {
+                const { clientX, clientY } = e;
+                const moveX = (clientX - window.innerWidth / 2) * 0.01;
+                const moveY = (clientY - window.innerHeight / 2) * 0.01;
+                gsap.to(pattern, { x: moveX, y: moveY, duration: 1 });
+            });
+
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    gsap.to(input.closest('.relative') || input, { scale: 1.02, duration: 0.3 });
+                });
+                input.addEventListener('blur', () => {
+                    gsap.to(input.closest('.relative') || input, { scale: 1, duration: 0.3 });
+                });
+            });
+        });
+    </script>
 </body>
 </html>
