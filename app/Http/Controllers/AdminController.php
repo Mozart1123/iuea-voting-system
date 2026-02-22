@@ -112,6 +112,13 @@ class AdminController extends Controller
             'status' => 'approved' // Direct admin nominations are approved by default
         ]);
 
+        User::notifyAdmins([
+            'title' => 'Nouveau Candidat',
+            'message' => "Le candidat {$request->name} a été enregistré par l'admin.",
+            'icon' => 'fas fa-user-plus',
+            'type' => 'success'
+        ]);
+
         return back()->with('success', 'Candidate "' . $request->name . '" has been nominated successfully.');
     }
 
@@ -137,8 +144,8 @@ class AdminController extends Controller
             return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
         }
 
-        $nominationSetting = \App\Models\SystemSetting::where('key', 'nomination_enabled')->first();
-        return view('admin.settings', compact('nominationSetting'));
+        $settings = \App\Models\SystemSetting::pluck('value', 'key')->toArray();
+        return view('admin.settings', compact('settings'));
     }
 
     public function updateSettings(Request $request)
@@ -191,6 +198,13 @@ class AdminController extends Controller
 
         $category->update($updateData);
 
+        User::notifyAdmins([
+            'title' => 'Statut Élection Modifié',
+            'message' => "L'élection {$category->name} est passée au statut: {$request->status}.",
+            'icon' => 'fas fa-poll',
+            'type' => 'info'
+        ]);
+
         return back()->with('success', 'Election status for ' . $category->name . ' updated to ' . $request->status);
     }
 
@@ -209,6 +223,13 @@ class AdminController extends Controller
 
         $candidate->update(['status' => $request->status]);
 
+        User::notifyAdmins([
+            'title' => 'Candidat ' . ucfirst($request->status),
+            'message' => "La candidature de {$candidate->name} a été " . ($request->status == 'approved' ? 'approuvée' : 'rejetée') . ".",
+            'icon' => $request->status == 'approved' ? 'fas fa-check-circle' : 'fas fa-times-circle',
+            'type' => $request->status == 'approved' ? 'success' : 'danger'
+        ]);
+
         return back()->with('success', 'Candidate ' . $candidate->name . ' has been ' . $request->status);
     }
 
@@ -224,15 +245,47 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
+            'faculty_restriction' => 'nullable|string',
         ]);
 
         \App\Models\Category::create([
             'name' => $request->name,
             'description' => $request->description,
+            'faculty_restriction' => $request->faculty_restriction,
             'status' => 'closed',
             'is_active' => false,
         ]);
 
+        User::notifyAdmins([
+            'title' => 'Nouvelle Élection',
+            'message' => "Une nouvelle élection a été créée: {$request->name}.",
+            'icon' => 'fas fa-vote-yea',
+            'type' => 'info'
+        ]);
+
         return back()->with('success', 'New election category "' . $request->name . '" created successfully.');
+    }
+
+    /**
+     * Get all notifications for the authenticated admin.
+     */
+    public function getNotifications()
+    {
+        $notifications = Auth::user()->notifications()->latest()->take(20)->get();
+        $unreadCount = Auth::user()->unreadNotifications->count();
+        
+        return response()->json([
+            'notifications' => $notifications,
+            'unread_count' => $unreadCount
+        ]);
+    }
+
+    /**
+     * Mark all notifications as read.
+     */
+    public function markNotificationsRead()
+    {
+        Auth::user()->unreadNotifications->markAsRead();
+        return response()->json(['success' => true]);
     }
 }

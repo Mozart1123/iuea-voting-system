@@ -111,10 +111,7 @@
                     <span class="font-bold text-sm uppercase tracking-widest">Nomination</span>
                 </a>
                 @endif
-                <a href="{{ route('dashboard.security') }}" class="flex items-center space-x-4 px-6 py-4 rounded-xl {{ Request::routeIs('dashboard.security') ? 'active-nav' : 'text-white/70 hover:text-white hover:bg-white/10' }} transition-all">
-                    <i class="fas fa-user-shield"></i>
-                    <span class="font-bold text-sm uppercase tracking-widest">Security</span>
-                </a>
+
             </nav>
         </div>
 

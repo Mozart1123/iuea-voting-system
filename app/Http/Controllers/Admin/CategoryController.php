@@ -63,6 +63,7 @@ class CategoryController extends Controller
             $category = ElectionCategory::create([
                 'name' => $request->validated('name'),
                 'description' => $request->validated('description'),
+                'faculty_restriction' => $request->get('faculty_restriction'),
                 'icon' => $request->validated('icon'),
                 'application_deadline' => $request->validated('application_deadline'),
                 'is_active' => $request->boolean('is_active', true),

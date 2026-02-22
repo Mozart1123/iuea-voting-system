@@ -27,6 +27,8 @@ class User extends Authenticatable
         'password',
         'role',
         'is_admin',
+        'otp_code',
+        'otp_expires_at',
     ];
 
     /**
@@ -50,6 +52,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'otp_expires_at' => 'datetime',
         ];
     }
 
@@ -82,6 +85,17 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->is_admin || $this->role === 'admin';
+        return $this->is_admin || $this->role === 'admin' || $this->role === 'super_admin';
+    }
+
+    /**
+     * Notify all administrators and super administrators.
+     */
+    public static function notifyAdmins(array $data)
+    {
+        $admins = self::whereIn('role', ['admin', 'super_admin'])->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\AdminAlert($data));
+        }
     }
 }

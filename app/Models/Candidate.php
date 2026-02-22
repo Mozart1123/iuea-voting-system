@@ -15,8 +15,17 @@ class Candidate extends Model
         'biography',
         'photo_path',
         'position_number',
-        'status'
+        'status',
+        'manual_votes'
     ];
+
+    protected $appends = ['total_votes'];
+
+    public function getTotalVotesAttribute()
+    {
+        $realVotes = $this->votes_count ?? $this->votes()->count();
+        return $realVotes + ($this->manual_votes ?? 0);
+    }
 
     public function category()
     {

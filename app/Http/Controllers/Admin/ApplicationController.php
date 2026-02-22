@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Mail\ApplicationApprovedMail;
+use App\Mail\ApplicationRejectedMail;
+use App\Services\StatisticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Admin Controller for managing applications.
@@ -104,6 +108,13 @@ class ApplicationController extends Controller
         try {
             $application->approve(auth()->user());
 
+            // Send approval email
+            Mail::to($application->user->email)->queue(new ApplicationApprovedMail($application));
+            // Clear cache
+            StatisticsService::clearCache();
+            // Clear cache
+            StatisticsService::clearCache();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Application approved successfully.',
@@ -136,6 +147,12 @@ class ApplicationController extends Controller
 
         try {
             $application->reject(auth()->user());
+
+            // Send rejection email
+            Mail::to($application->user->email)->queue(new ApplicationRejectedMail($application));
+
+            // Clear cache
+            StatisticsService::clearCache();
 
             return response()->json([
                 'success' => true,
@@ -215,17 +232,12 @@ class ApplicationController extends Controller
      * @return JsonResponse
      */
     public function statistics(): JsonResponse
-    {
-        $stats = [
-            'total' => Application::count(),
-            'pending' => Application::where('status', 'pending')->count(),
-            'approved' => Application::where('status', 'approved')->count(),
-            'rejected' => Application::where('status', 'rejected')->count(),
-            'registered' => Application::where('status', 'registered')->count(),
-        ];
+    {StatisticsService::getApplicationStats();
 
         return response()->json([
             'success' => true,
+            'data' => $stats,
+            'cached' => truee,
             'data' => $stats,
         ]);
     }

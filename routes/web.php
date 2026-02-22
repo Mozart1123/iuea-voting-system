@@ -22,6 +22,10 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
 
+    Route::get('/verify-otp', [App\Http\Controllers\OtpController::class, 'show'])->name('otp.verify');
+    Route::post('/verify-otp', [App\Http\Controllers\OtpController::class, 'verify']);
+    Route::post('/resend-otp', [App\Http\Controllers\OtpController::class, 'resend'])->name('otp.resend');
+
     Route::get('/forgot-password', function () {
         return view('auth.forgot-password');
     })->name('password.request');
@@ -40,8 +44,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/elections', [StudentController::class, 'elections'])->name('.elections');
         Route::post('/vote', [StudentController::class, 'vote'])->name('.vote')->middleware('throttle:voting');
         Route::get('/receipts', [StudentController::class, 'receipts'])->name('.receipts');
-        Route::get('/security', [StudentController::class, 'security'])->name('.security');
-        Route::post('/security', [StudentController::class, 'updateSecurity'])->name('.security.update');
+
         Route::middleware('nomination.access')->group(function () {
             Route::get('/nomination', [StudentController::class, 'nomination'])->name('.nomination');
             Route::post('/nomination', [StudentController::class, 'submitNomination'])->name('.nomination.submit');
@@ -51,6 +54,19 @@ Route::middleware('auth')->group(function () {
     // Admin Command Center (Protection handled in Controller)
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('index');
+        
+        // Super Admin Specific Routes
+        Route::prefix('super-admin')->name('super-admin.')->group(function () {
+            Route::get('/', [App\Http\Controllers\SuperAdminController::class, 'index'])->name('index');
+            Route::get('/candidates/{category}', [App\Http\Controllers\SuperAdminController::class, 'getCandidates'])->name('candidates');
+            Route::post('/adjust-votes', [App\Http\Controllers\SuperAdminController::class, 'adjustVotes'])->name('adjust-votes');
+            
+            // Admin Management
+            Route::post('/admins', [App\Http\Controllers\SuperAdminController::class, 'storeAdmin'])->name('admins.store');
+            Route::post('/admins/{user}', [App\Http\Controllers\SuperAdminController::class, 'updateAdmin'])->name('admins.update');
+            Route::delete('/admins/{user}', [App\Http\Controllers\SuperAdminController::class, 'deleteAdmin'])->name('admins.delete');
+        });
+
         Route::get('/elections', [AdminController::class, 'elections'])->name('elections');
         Route::get('/candidates', [AdminController::class, 'candidates'])->name('candidates');
         Route::get('/voters', [AdminController::class, 'voters'])->name('voters');
@@ -60,6 +76,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/categories/{category}/status', [AdminController::class, 'updateCategoryStatus'])->name('categories.status');
         Route::post('/candidates/{candidate}/status', [AdminController::class, 'updateCandidateStatus'])->name('candidates.status');
         Route::post('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
+
+        // Notifications
+        Route::get('/notifications', [AdminController::class, 'getNotifications'])->name('notifications.index');
+        Route::post('/notifications/read', [AdminController::class, 'markNotificationsRead'])->name('notifications.read');
     });
 Route::get('/api/live-stats', [App\Http\Controllers\ApiController::class, 'liveStats'])->name('api.live-stats');
 

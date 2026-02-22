@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    protected $fillable = ['name', 'description', 'is_active', 'status', 'start_time', 'end_time'];
+    protected $fillable = ['name', 'description', 'faculty_restriction', 'is_active', 'status', 'start_time', 'end_time'];
+
+    public function getTotalVotesAttribute()
+    {
+        $realVotes = $this->votes_count ?? $this->votes()->count();
+        return $realVotes + $this->candidates()->sum('manual_votes');
+    }
 
     public function candidates()
     {

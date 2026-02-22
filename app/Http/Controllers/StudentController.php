@@ -18,8 +18,12 @@ class StudentController extends Controller
     {
         $user = Auth::user();
         
-        // Data for Vote Now / Elections
+        // Data for Vote Now / Elections - Restricted by Faculty
         $categories = Category::where('status', 'voting')
+            ->where(function($q) use ($user) {
+                $q->whereNull('faculty_restriction')
+                  ->orWhere('faculty_restriction', $user->faculty);
+            })
             ->with(['candidates' => function($query) {
                 $query->where('status', 'approved')->orderBy('position_number')->withCount('votes');
             }])
@@ -30,8 +34,12 @@ class StudentController extends Controller
             ->pluck('category_id')
             ->toArray();
             
-        // Results (all voting/completed categories)
+        // Results (categories visible to the user)
         $results = Category::whereIn('status', ['voting', 'completed'])
+            ->where(function($q) use ($user) {
+                $q->whereNull('faculty_restriction')
+                  ->orWhere('faculty_restriction', $user->faculty);
+            })
             ->with(['candidates' => function($query) {
                 $query->withCount('votes')->orderByDesc('votes_count'); // Fixed: Added withCount here
             }])
@@ -44,6 +52,8 @@ class StudentController extends Controller
             ->latest()
             ->get();
 
+        $electionEndTime = \App\Models\SystemSetting::where('key', 'election_end_time')->value('value');
+
         return view('dashboard.index', [
             'user' => $user,
             'categories' => $categories,
@@ -53,6 +63,7 @@ class StudentController extends Controller
             'totalCategories' => $categories->count(),
             'votesCount' => count($votedCategoryIds),
             'pendingVotes' => $categories->count() - count($votedCategoryIds),
+            'electionEndTime' => $electionEndTime,
         ]);
     }
 
@@ -61,7 +72,12 @@ class StudentController extends Controller
      */
     public function elections()
     {
+        $user = Auth::user();
         $categories = Category::where('status', 'voting')
+            ->where(function($q) use ($user) {
+                $q->whereNull('faculty_restriction')
+                  ->orWhere('faculty_restriction', $user->faculty);
+            })
             ->with(['candidates' => function($query) {
                 $query->where('status', 'approved')->orderBy('position_number')->withCount('votes');
             }])
@@ -72,7 +88,8 @@ class StudentController extends Controller
             ->pluck('category_id')
             ->toArray();
 
-        return view('dashboard.elections', compact('categories', 'votedCategoryIds'));
+        $electionEndTime = \App\Models\SystemSetting::where('key', 'election_end_time')->value('value');
+        return view('dashboard.elections', compact('categories', 'votedCategoryIds', 'electionEndTime'));
     }
 
     /**
@@ -85,8 +102,14 @@ class StudentController extends Controller
         ]);
 
         return \DB::transaction(function () use ($request) {
-            $candidate = Candidate::lockForUpdate()->findOrFail($request->candidate_id);
-            $userId = Auth::id();
+            $candidate = Candidate::lockForUpdate()->with('category')->findOrFail($request->candidate_id);
+            $user = Auth::user();
+            $userId = $user->id;
+
+            // Faculty Restriction Check
+            if ($candidate->category->faculty_restriction && $candidate->category->faculty_restriction !== $user->faculty) {
+                return back()->with('error', 'You are not eligible to vote in this faculty-restricted election.');
+            }
 
             // Check if already voted in this category
             $existingVote = Vote::where('user_id', $userId)
@@ -128,36 +151,7 @@ class StudentController extends Controller
         return view('dashboard.receipts', compact('votes'));
     }
 
-    /**
-     * Show security settings
-     */
-    public function security()
-    {
-        return view('dashboard.security');
-    }
 
-    /**
-     * Update security settings
-     */
-    public function updateSecurity(Request $request)
-    {
-        $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|min:8|confirmed',
-        ]);
-
-        $user = Auth::user();
-
-        if (!Hash::check($request->current_password, $user->password)) {
-            return back()->with('error', 'Current password does not match our record.');
-        }
-
-        $user->update([
-            'password' => Hash::make($request->new_password)
-        ]);
-
-        return back()->with('success', 'Password updated successfully!');
-    }
 
     /**
      * Show nomination page
@@ -165,7 +159,12 @@ class StudentController extends Controller
     public function nomination()
     {
         $user = Auth::user();
-        $categoriesInNomination = Category::where('status', 'nomination')->get();
+        $categoriesInNomination = Category::where('status', 'nomination')
+            ->where(function($q) use ($user) {
+                $q->whereNull('faculty_restriction')
+                  ->orWhere('faculty_restriction', $user->faculty);
+            })
+            ->get();
         
         // Find if user already has a pending or approved nomination
         $existingNomination = Candidate::where('user_id', $user->id)->first();
@@ -213,6 +212,13 @@ class StudentController extends Controller
             'biography' => $request->biography,
             'photo_path' => $photoPath,
             'status' => 'pending'
+        ]);
+
+        \App\Models\User::notifyAdmins([
+            'title' => 'Nouvelle Candidature',
+            'message' => "{$user->name} a postulé pour une élection.",
+            'icon' => 'fas fa-user-graduate',
+            'type' => 'info'
         ]);
 
         return redirect()->route('dashboard.nomination')->with('success', 'Your candidacy has been submitted and is awaiting approval.');

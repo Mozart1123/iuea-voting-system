@@ -36,7 +36,7 @@
 <body class="min-h-screen flex flex-col md:flex-row antialiased">
 
     <!-- LEFT PANEL -->
-    <div class="md:w-1/2 gradient-left text-white flex flex-col justify-between p-8 md:p-12 lg:p-16 relative overflow-hidden">
+    <div id="left-panel" class="md:w-1/2 gradient-left text-white flex flex-col justify-between p-8 md:p-12 lg:p-16 relative overflow-hidden">
         <div class="absolute inset-0 opacity-5" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'white\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/svg%3E');"></div>
         
         <div class="relative z-10">
@@ -82,14 +82,14 @@
     </div>
 
     <!-- RIGHT PANEL -->
-    <div class="md:w-1/2 bg-white flex items-center justify-center p-6 md:p-10">
+    <div id="right-panel" class="md:w-1/2 bg-white flex items-center justify-center p-6 md:p-10">
         <div class="w-full max-w-md">
             <div class="mb-8">
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
                 <p class="text-gray-500">Register to participate in the upcoming elections.</p>
             </div>
             
-            <form action="{{ route('register') }}" method="POST" class="space-y-4">
+            <form id="auth-form" action="{{ route('register') }}" method="POST" class="space-y-4">
                 @csrf
                 
                 <!-- Full Name -->
@@ -109,12 +109,12 @@
 
                 <!-- Email -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">University Email</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Personal Email (Gmail)</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-envelope text-gray-400"></i>
                         </div>
-                        <input type="email" name="email" value="{{ old('email') }}" placeholder="name@iuea.ac.ug" 
+                        <input type="email" name="email" value="{{ old('email') }}" placeholder="username@gmail.com" 
                                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition duration-200 text-gray-900 @error('email') border-red-500 @enderror" required>
                     </div>
                     @error('email')
@@ -132,7 +132,25 @@
                         <input type="text" name="student_id" value="{{ old('student_id') }}" placeholder="21/U/1234/PS" 
                                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition duration-200 text-gray-900 @error('student_id') border-red-500 @enderror" required>
                     </div>
-                    @error('student_id')
+                </div>
+
+                <!-- Faculty Selection -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Your Faculty</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-graduation-cap text-gray-400"></i>
+                        </div>
+                        <select name="faculty" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition duration-200 text-gray-900 @error('faculty') border-red-500 @enderror" required>
+                            <option value="">Select Faculty</option>
+                            <option value="Science & Technology" {{ old('faculty') == 'Science & Technology' ? 'selected' : '' }}>Science & Technology</option>
+                            <option value="Business & Management" {{ old('faculty') == 'Business & Management' ? 'selected' : '' }}>Business & Management</option>
+                            <option value="Law" {{ old('faculty') == 'Law' ? 'selected' : '' }}>Law</option>
+                            <option value="Social Sciences" {{ old('faculty') == 'Social Sciences' ? 'selected' : '' }}>Social Sciences</option>
+                            <option value="Engineering" {{ old('faculty') == 'Engineering' ? 'selected' : '' }}>Engineering</option>
+                        </select>
+                    </div>
+                    @error('faculty')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -154,7 +172,7 @@
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
 
-                <button type="submit" class="w-full bg-primary text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:bg-primary-dark transition duration-200">
+                <button type="submit" id="submit-btn" class="w-full bg-red-50 text-primary border-2 border-primary font-bold py-3 px-4 rounded-xl shadow-md hover:bg-red-100 transition duration-200">
                     Create Voter Profile
                 </button>
                 
@@ -178,8 +196,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
 
-            tl.from(".gradient-left", { xPercent: -100, duration: 1.2 })
-              .from(".md-w-1-2.bg-white", { xPercent: 100, duration: 1.2 }, "-=1.2")
+            tl.from("#left-panel", { xPercent: -100, duration: 1.2 })
+              .from("#right-panel", { xPercent: 100, duration: 1.2 }, "-=1.2")
               .from(".relative.z-10 > div", { 
                   y: 40, 
                   opacity: 0, 
@@ -192,9 +210,8 @@
                   stagger: 0.1, 
                   duration: 0.8 
               }, "-=0.8")
-              .from("form button", { 
-                  scale: 0.9, 
-                  opacity: 0, 
+              .from("#submit-btn", { 
+                  y: 10,
                   duration: 0.5 
               }, "-=0.3");
 

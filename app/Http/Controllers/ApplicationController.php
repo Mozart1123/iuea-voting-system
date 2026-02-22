@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreApplicationRequest;
 use App\Models\Application;
 use App\Models\ElectionCategory;
+use App\Mail\ApplicationSubmittedMail;
+use App\Services\StatisticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Student API for managing their election applications.
@@ -82,6 +85,9 @@ class ApplicationController extends Controller
                 'manifesto_url' => $request->validated('manifesto_url'),
                 'status' => 'pending',
             ]);
+
+            // Send confirmation email
+            Mail::to(auth()->user()->email)->queue(new ApplicationSubmittedMail($application));
 
             return response()->json([
                 'success' => true,
@@ -192,19 +198,12 @@ class ApplicationController extends Controller
      */
     public function stats(): JsonResponse
     {
-        $applications = auth()->user()->applications();
-
-        $stats = [
-            'total_applications' => $applications->count(),
-            'pending' => $applications->where('status', 'pending')->count(),
-            'approved' => $applications->where('status', 'approved')->count(),
-            'rejected' => $applications->where('status', 'rejected')->count(),
-            'registered' => $applications->where('status', 'registered')->count(),
-        ];
+        $stats = StatisticsService::getUserApplicationStats(auth()->id());
 
         return response()->json([
             'success' => true,
             'data' => $stats,
+            'cached' => true,
         ]);
     }
 }

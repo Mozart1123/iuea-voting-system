@@ -41,7 +41,7 @@
 <body class="min-h-screen flex flex-col md:flex-row antialiased">
 
     <!-- LEFT PANEL – brand, value prop, testimonial (dark red) -->
-    <div class="md:w-1/2 gradient-left text-white flex flex-col justify-between p-8 md:p-12 lg:p-16 relative overflow-hidden">
+    <div id="left-panel" class="md:w-1/2 gradient-left text-white flex flex-col justify-between p-8 md:p-12 lg:p-16 relative overflow-hidden">
         <!-- subtle pattern overlay -->
         <div class="absolute inset-0 opacity-5" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'white\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/svg%3E');"></div>
         
@@ -103,7 +103,7 @@
     </div>
 
     <!-- RIGHT PANEL – login form (pure white) -->
-    <div class="md:w-1/2 bg-white flex items-center justify-center p-6 md:p-10">
+    <div id="right-panel" class="md:w-1/2 bg-white flex items-center justify-center p-6 md:p-10">
         <div class="w-full max-w-md">
             <!-- header for mobile (appears only on small screens) -->
             <div class="md:hidden flex items-center space-x-3 mb-10">
@@ -117,7 +117,7 @@
             </div>
             
             <!-- login form -->
-            <form action="{{ route('login') }}" method="POST" class="space-y-6">
+            <form id="auth-form" action="{{ route('login') }}" method="POST" class="space-y-6">
                 @csrf
                 <!-- email / student ID -->
                 <div>
@@ -162,8 +162,8 @@
                 </div>
                 
                 <!-- login button -->
-                <button type="submit" class="w-full bg-primary text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-xl hover:bg-primary-dark transition duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-shield-alt"></i> Authorize Identity
+                <button type="submit" id="submit-btn" class="w-full bg-red-50 text-primary border-2 border-primary font-bold py-3.5 px-4 rounded-xl shadow-md hover:bg-red-100 transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-shield-alt"></i> Login
                 </button>
                 
                 <!-- SSO / callout -->
@@ -203,8 +203,8 @@
             // Main entry timeline
             const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
 
-            tl.from(".gradient-left", { xPercent: -100, duration: 1.2 })
-              .from(".md-w-1-2.bg-white", { xPercent: 100, duration: 1.2 }, "-=1.2")
+            tl.from("#left-panel", { xPercent: -100, duration: 1.2 })
+              .from("#right-panel", { xPercent: 100, duration: 1.2 }, "-=1.2")
               .from(".relative.z-10 > div", { 
                   y: 40, 
                   opacity: 0, 
@@ -217,9 +217,8 @@
                   stagger: 0.1, 
                   duration: 0.8 
               }, "-=0.8")
-              .from("form button", { 
-                  scale: 0.9, 
-                  opacity: 0, 
+              .from("#submit-btn", { 
+                  y: 10,
                   duration: 0.5 
               }, "-=0.3");
 

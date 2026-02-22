@@ -5,14 +5,14 @@
 
 // Get CSRF token from meta tag
 const getCsrfToken = () => {
-    return document.querySelector('meta[name="csrf-token"]')?.content || 
-           document.querySelector('meta[name="X-CSRF-TOKEN"]')?.content || '';
+    return document.querySelector('meta[name="csrf-token"]')?.content ||
+        document.querySelector('meta[name="X-CSRF-TOKEN"]')?.content || '';
 };
 
 // Get auth token from localStorage or meta tag (Sanctum)
 const getAuthToken = () => {
-    return localStorage.getItem('auth-token') || 
-           document.querySelector('meta[name="X-Auth-Token"]')?.content || '';
+    return localStorage.getItem('auth-token') ||
+        document.querySelector('meta[name="X-Auth-Token"]')?.content || '';
 };
 
 // API Base URL
@@ -351,7 +351,7 @@ function setupModalHandling() {
     });
 
     // EXPOSE GLOBAL FUNCTION FOR APPLY BUTTONS
-    window.openApplicationModal = function(categoryId, categoryName, deadline) {
+    window.openApplicationModal = function (categoryId, categoryName, deadline) {
         currentCategoryId = categoryId;
         currentCategoryName = categoryName;
         document.getElementById('modalTitle').textContent = `Apply for ${categoryName}`;

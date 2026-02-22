@@ -157,10 +157,27 @@
                     <h2 id="pageTitle" class="text-lg font-semibold text-gray-800">Admin Dashboard</h2>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button class="relative text-gray-500 hover:text-primary transition">
-                        <i class="fas fa-bell text-xl"></i>
-                        <span class="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">5</span>
-                    </button>
+                    <!-- Notifications Bell -->
+                    <div class="relative" id="notificationDropdown">
+                        <button onclick="toggleNotifications()" class="relative text-gray-500 hover:text-primary transition-colors p-2">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span id="notificationBadge" class="absolute top-1 right-1 bg-primary text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center border-2 border-white hidden">0</span>
+                        </button>
+
+                        <!-- Notification Menu -->
+                        <div id="notificationMenu" class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 hidden z-50 overflow-hidden">
+                            <div class="p-4 border-b border-gray-50 flex items-center justify-between">
+                                <h4 class="font-bold text-gray-900">Notifications</h4>
+                                <button onclick="markAllAsRead()" class="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Mark all read</button>
+                            </div>
+                            <div id="notificationList" class="max-h-[400px] overflow-y-auto">
+                                <div class="p-8 text-center text-gray-400">
+                                    <i class="fas fa-bell-slash text-3xl mb-3 block"></i>
+                                    <p class="text-xs font-medium">No alerts today</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="hidden md:flex items-center space-x-3">
                         <span class="text-sm text-gray-600">Election Commission</span>
                         <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold">
@@ -411,7 +428,7 @@
                                                 <span class="font-medium text-gray-900">{{ $candidate->name }}</span>
                                             </div>
                                         </td>
-                                        <td class="px-4 py-3 text-gray-700">{{ $candidate->category->name }}</td>
+                                        <td class="px-4 py-3 text-gray-700">{{ $candidate->category?->name ?? 'No Category' }}</td>
                                         <td class="px-4 py-3 text-gray-700">{{ $candidate->faculty }}</td>
                                         <td class="px-4 py-3">
                                             <span class="px-3 py-1 rounded-full text-xs {{ $candidate->status == 'approved' ? 'bg-green-100 text-green-700' : ($candidate->status == 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') }}">
@@ -495,9 +512,9 @@
                                     @foreach($recentVotes as $vote)
                                     <tr>
                                         <td class="px-4 py-3 text-gray-500">{{ $vote->created_at->format('Y-m-d H:i:s') }}</td>
-                                        <td class="px-4 py-3">{{ $vote->user->name }}</td>
-                                        <td class="px-4 py-3">{{ $vote->category->name }}</td>
-                                        <td class="px-4 py-3"><span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs">{{ $vote->candidate->name }}</span></td>
+                                        <td class="px-4 py-3">{{ $vote->user?->name ?? 'Unknown User' }}</td>
+                                        <td class="px-4 py-3">{{ $vote->category?->name ?? 'Unknown Category' }}</td>
+                                        <td class="px-4 py-3"><span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs">{{ $vote->candidate?->name ?? 'Unknown Candidate' }}</span></td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -514,14 +531,14 @@
                             @foreach($categoriesStats as $stat)
                             <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
                                 <h4 class="font-bold text-gray-800 mb-4">{{ $stat->name }}</h4>
-                                <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Total votes cast: {{ $stat->votes_count }}</p>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Total votes cast: {{ $stat->total_votes }}</p>
                                 <div class="space-y-3">
-                                    @foreach($stat->candidates()->withCount('votes')->orderByDesc('votes_count')->get() as $cand)
-                                        @php $perc = $stat->votes_count > 0 ? round(($cand->votes_count / $stat->votes_count) * 100, 1) : 0; @endphp
+                                    @foreach($stat->candidates->sortByDesc('total_votes') as $cand)
+                                        @php $perc = $stat->total_votes > 0 ? round(($cand->total_votes / $stat->total_votes) * 100, 1) : 0; @endphp
                                         <div>
                                             <div class="flex justify-between text-xs">
                                                 <span>{{ $cand->name }}</span>
-                                                <span class="font-bold">{{ $cand->votes_count }} ({{ $perc }}%)</span>
+                                                <span class="font-bold">{{ $cand->total_votes }} ({{ $perc }}%)</span>
                                             </div>
                                             <div class="w-full bg-gray-200 h-2 rounded-full mt-1">
                                                 <div class="bg-primary h-2 rounded-full" style="width: {{ $perc }}%"></div>
@@ -571,21 +588,72 @@
 
     <!-- Modals -->
     <div id="newElectionModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl w-full max-w-md p-6">
-            <h3 class="text-xl font-bold mb-4">Create New Election</h3>
-            <form action="{{ route('admin.categories.store') }}" method="POST" class="space-y-4">
-                @csrf
+        <div class="bg-white rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold">Create New Category</h3>
+                <button onclick="closeModal('newElectionModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Form to create category -->
+            <form id="createCategoryForm" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Category Name</label>
-                    <input type="text" name="name" class="w-full mt-1 border border-gray-300 rounded-lg px-4 py-2" placeholder="e.g. Guild Presidential" required>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category Name *</label>
+                    <input type="text" name="name" id="categoryName" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="e.g. Guild President, Vice President" required>
                 </div>
+
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Description</label>
-                    <textarea name="description" class="w-full mt-1 border border-gray-300 rounded-lg px-4 py-2" placeholder="Rules and details..." required></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Faculty Restriction (Optional)</label>
+                    <select id="facultyRestriction" name="faculty_restriction" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                        <option value="">Open to All Faculties</option>
+                        <option value="Science & Technology">Science & Technology</option>
+                        <option value="Business & Management">Business & Management</option>
+                        <option value="Law">Law</option>
+                        <option value="Social Sciences">Social Sciences</option>
+                        <option value="Engineering">Engineering</option>
+                    </select>
+                    <p class="text-[10px] text-gray-400 mt-1 italic">If selection is empty, all students can vote.</p>
                 </div>
-                <div class="flex justify-end gap-3 mt-6">
-                    <button type="button" onclick="closeModal('newElectionModal')" class="px-4 py-2 text-gray-600">Cancel</button>
-                    <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg">Create</button>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                    <textarea name="description" id="categoryDescription" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Enter category details and requirements..." rows="3" required></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Icon Class *</label>
+                        <input type="text" name="icon" id="categoryIcon" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="e.g. fa-user-tie" value="fa-vote-yea" required>
+                        <p class="text-xs text-gray-500 mt-1">FontAwesome class (without 'fas' or 'far')</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Preview</label>
+                        <div class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-50 flex items-center justify-center h-10">
+                            <i id="iconPreview" class="fas fa-vote-yea text-primary text-lg"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Application Deadline *</label>
+                    <input type="datetime-local" name="application_deadline" id="applicationDeadline" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" required>
+                </div>
+
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <input type="checkbox" name="is_active" id="isActive" class="w-4 h-4 text-primary rounded" checked>
+                    <label for="isActive" class="text-sm text-gray-700">Active category (students can see and apply)</label>
+                </div>
+
+                <!-- Status Messages -->
+                <div id="categoryMessage" class="hidden p-3 rounded-lg text-sm"></div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button type="button" onclick="closeModal('newElectionModal')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+                    <button type="submit" id="submitCategoryBtn" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Create Category</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -705,12 +773,173 @@
 
             // Modal helpers
             window.openModal = function(id) { document.getElementById(id).classList.remove('hidden'); }
-            window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); }
+            window.closeModal = function(id) { 
+                document.getElementById(id).classList.add('hidden');
+                // Clear form if closing category modal
+                if (id === 'newElectionModal') {
+                    document.getElementById('createCategoryForm').reset();
+                    document.getElementById('categoryMessage').classList.add('hidden');
+                }
+            }
 
             // Prevent default on empty href links
             document.querySelectorAll('a[href="#"]').forEach(link => {
                 link.addEventListener('click', function(e) { e.preventDefault(); });
             });
+
+            // ========== CATEGORY CREATION VIA API ==========
+            const categoryIconInput = document.getElementById('categoryIcon');
+            const iconPreview = document.getElementById('iconPreview');
+            const createCategoryForm = document.getElementById('createCategoryForm');
+            const categoryMessage = document.getElementById('categoryMessage');
+            const submitCategoryBtn = document.getElementById('submitCategoryBtn');
+
+            // Update icon preview
+            if (categoryIconInput) {
+                categoryIconInput.addEventListener('input', function() {
+                    iconPreview.className = `fas ${this.value || 'fa-vote-yea'} text-primary text-lg`;
+                });
+            }
+
+            // Handle category form submission
+            if (createCategoryForm) {
+                createCategoryForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const name = document.getElementById('categoryName').value;
+                    const description = document.getElementById('categoryDescription').value;
+                    const icon = document.getElementById('categoryIcon').value;
+                    const deadline = document.getElementById('applicationDeadline').value;
+                    const facultyRestriction = document.getElementById('facultyRestriction').value;
+                    const isActive = document.getElementById('isActive').checked;
+
+                    // Show loading state
+                    submitCategoryBtn.disabled = true;
+                    submitCategoryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Creating...</span>';
+                    categoryMessage.classList.add('hidden');
+
+                    try {
+                        const response = await fetch('/api/admin/categories', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + (localStorage.getItem('auth_token') || ''),
+                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                            },
+                            body: JSON.stringify({
+                                name: name,
+                                description: description,
+                                faculty_restriction: facultyRestriction,
+                                icon: icon,
+                                application_deadline: new Date(deadline).toISOString(),
+                                is_active: isActive
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            // Show success message
+                            categoryMessage.className = 'p-3 rounded-lg text-sm bg-green-100 text-green-700 flex items-center gap-2';
+                            categoryMessage.innerHTML = '<i class="fas fa-check-circle"></i> Category created successfully!';
+                            categoryMessage.classList.remove('hidden');
+
+                            // Close modal after 1.5 seconds
+                            setTimeout(() => {
+                                window.closeModal('newElectionModal');
+                                // Refresh the page or reload elections
+                                setTimeout(() => location.reload(), 300);
+                            }, 1500);
+                        } else {
+                            throw new Error(data.message || 'Failed to create category');
+                        }
+                    } catch (error) {
+                        categoryMessage.className = 'p-3 rounded-lg text-sm bg-red-100 text-red-700 flex items-center gap-2';
+                        categoryMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message || 'An error occurred'}`;
+                        categoryMessage.classList.remove('hidden');
+                    } finally {
+                        submitCategoryBtn.disabled = false;
+                        submitCategoryBtn.innerHTML = '<i class="fas fa-plus"></i> <span>Create Category</span>';
+                    }
+                });
+            }
+
+            // LIVE NOTIFICATIONS
+            window.toggleNotifications = function() {
+                const menu = document.getElementById('notificationMenu');
+                menu.classList.toggle('hidden');
+                if(!menu.classList.contains('hidden')) {
+                    fetchNotifications();
+                }
+            }
+
+            window.fetchNotifications = async function() {
+                try {
+                    const res = await fetch('/admin/notifications');
+                    const data = await res.json();
+                    const badge = document.getElementById('notificationBadge');
+                    const list = document.getElementById('notificationList');
+                    
+                    if(data.unread_count > 0) {
+                        badge.textContent = data.unread_count;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+
+                    if(data.notifications.length > 0) {
+                        list.innerHTML = data.notifications.map(n => `
+                            <div class="p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-default ${!n.read_at ? 'bg-primary/5' : ''}">
+                                <div class="flex gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-primary border border-gray-100 flex-shrink-0">
+                                        <i class="${n.data.icon || 'fas fa-info-circle'}"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-bold text-gray-900">${n.data.title}</p>
+                                        <p class="text-[11px] text-gray-500 leading-tight mt-0.5">${n.data.message}</p>
+                                        <span class="text-[9px] font-bold text-gray-400 mt-2 block">${new Date(n.created_at).toLocaleString('en-US')}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        list.innerHTML = `
+                            <div class="p-8 text-center text-gray-400">
+                                <i class="fas fa-bell-slash text-3xl mb-3 block"></i>
+                                <p class="text-xs font-medium">No alerts today</p>
+                            </div>`;
+                    }
+                } catch(e) { console.error(e); }
+            }
+
+            window.markAllAsRead = async function() {
+                try {
+                    const res = await fetch('/admin/notifications/read', {
+                        method: 'POST',
+                        headers: { 
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        document.getElementById('notificationBadge').classList.add('hidden');
+                        fetchNotifications();
+                    }
+                } catch(e) { console.error(e); }
+            }
+
+            // Close notification menu on click outside
+            document.addEventListener('click', (e) => {
+                const dropdown = document.getElementById('notificationDropdown');
+                if(dropdown && !dropdown.contains(e.target)) {
+                    document.getElementById('notificationMenu').classList.add('hidden');
+                }
+            });
+
+            // Initial load and periodic refresh
+            fetchNotifications();
+            setInterval(fetchNotifications, 30000);
         })();
     </script>
 </body>

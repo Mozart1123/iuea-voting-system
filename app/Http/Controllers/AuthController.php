@@ -26,10 +26,32 @@ class AuthController extends Controller
         ]);
 
         if ($authAttempt) {
+            $user = Auth::user();
+
+            // Guard against unverified student accounts
+            if ($user->role === 'student' && !$user->email_verified_at) {
+                $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                $user->otp_code = $otp;
+                $user->otp_expires_at = now()->addMinutes(10);
+                $user->save();
+
+                $user->notify(new \App\Notifications\OtpNotification($otp));
+                
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                
+                session(['otp_user_id' => $user->id]);
+                return redirect()->route('otp.verify')->with('status', 'Veuillez vérifier votre compte avec le code OTP envoyé.');
+            }
+
             $request->session()->regenerate();
 
             // Redirect based on role
-            $user = Auth::user();
+            if ($user->role === 'super_admin') {
+                return redirect()->intended(route('admin.super-admin.index'));
+            }
+
             if ($user->role === 'admin') {
                 return redirect()->intended(route('admin.index'));
             }

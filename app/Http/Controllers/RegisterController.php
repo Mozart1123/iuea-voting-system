@@ -25,21 +25,49 @@ class RegisterController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => [
+                'required', 
+                'string', 
+                'lowercase', 
+                'email', 
+                'max:255', 
+                'unique:'.User::class,
+                'regex:/^[a-zA-Z0-9._%+-]+@gmail\.com$/i'
+            ],
             'student_id' => ['required', 'string', 'max:50', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'faculty' => ['required', 'string', 'max:255'],
+            'password' => [
+                'required', 
+                'confirmed', 
+                \Illuminate\Validation\Rules\Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+            ],
+        ], [
+            'email.regex' => 'Vous devez utiliser une adresse email @gmail.com.',
         ]);
+
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'student_id' => $request->student_id,
+            'faculty' => $request->faculty,
             'password' => Hash::make($request->password),
-            'role' => 'student', // Default role
+            'role' => 'student',
+            'otp_code' => $otp,
+            'otp_expires_at' => now()->addMinutes(10),
         ]);
 
-        Auth::login($user);
+        // Send OTP
+        $user->notify(new \App\Notifications\OtpNotification($otp));
 
-        return redirect()->route('dashboard.index');
+        // Store user ID in session for verification
+        session(['otp_user_id' => $user->id]);
+
+        return redirect()->route('otp.verify');
     }
 }
