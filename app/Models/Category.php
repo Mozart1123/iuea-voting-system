@@ -3,23 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    protected $fillable = ['name', 'description', 'faculty_restriction', 'is_active', 'status', 'start_time', 'end_time'];
+    use SoftDeletes;
 
-    public function getTotalVotesAttribute()
-    {
-        $realVotes = $this->votes_count ?? $this->votes()->count();
-        return $realVotes + $this->candidates()->sum('manual_votes');
-    }
+    protected $fillable = ['name', 'description', 'is_active', 'faculty_restriction', 'starts_at', 'ends_at'];
 
-    public function candidates()
+    protected $casts = [
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
+        'is_active' => 'boolean',
+    ];
+
+    public function candidates(): HasMany
     {
         return $this->hasMany(Candidate::class);
     }
 
-    public function votes()
+    public function votes(): HasMany
     {
         return $this->hasMany(Vote::class);
     }

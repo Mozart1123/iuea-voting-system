@@ -2,100 +2,62 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
-        'student_id',
-        'faculty',
-        'year_of_study',
         'password',
-        'role',
-        'is_admin',
-        'otp_code',
-        'otp_expires_at',
+        'role_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean',
-            'otp_expires_at' => 'datetime',
         ];
     }
 
     /**
-     * Get all applications submitted by this user.
+     * Get the role associated with the user.
      */
-    public function applications(): HasMany
+    public function role(): BelongsTo
     {
-        return $this->hasMany(Application::class);
+        return $this->belongsTo(Role::class);
     }
 
     /**
-     * Get all election categories created by this admin.
+     * Check if user has a specific role.
      */
-    public function createdCategories(): HasMany
+    public function hasRole(string|array $role): bool
     {
-        return $this->hasMany(ElectionCategory::class, 'created_by');
+        if (!$this->role) return false;
+        
+        if (is_array($role)) {
+            return in_array($this->role->name, $role);
+        }
+        
+        return $this->role->name === $role;
     }
 
     /**
-     * Get all applications reviewed by this admin.
-     */
-    public function reviewedApplications(): HasMany
-    {
-        return $this->hasMany(Application::class, 'reviewed_by');
-    }
-
-    /**
-     * Check if user is an admin.
+     * Helper to check if user is any kind of admin.
      */
     public function isAdmin(): bool
     {
-        return $this->is_admin || $this->role === 'admin' || $this->role === 'super_admin';
-    }
-
-    /**
-     * Notify all administrators and super administrators.
-     */
-    public static function notifyAdmins(array $data)
-    {
-        $admins = self::whereIn('role', ['admin', 'super_admin'])->get();
-        foreach ($admins as $admin) {
-            $admin->notify(new \App\Notifications\AdminAlert($data));
-        }
+        return $this->hasRole(['super_admin', 'system_admin', 'normal_admin']);
     }
 }

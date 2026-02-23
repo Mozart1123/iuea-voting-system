@@ -3,23 +3,29 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Vote extends Model
 {
-    protected $fillable = ['user_id', 'candidate_id', 'category_id'];
+    protected $fillable = [
+        'voter_id', 
+        'category_id', 
+        'candidate_id', 
+        'integrity_hash'
+    ];
 
-    public function user()
+    public function voter(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Voter::class);
     }
 
-    public function candidate()
-    {
-        return $this->belongsTo(Candidate::class);
-    }
-
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function candidate(): BelongsTo
+    {
+        return $this->belongsTo(Candidate::class);
     }
 }

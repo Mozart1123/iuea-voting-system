@@ -3,41 +3,29 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Candidate extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
-        'category_id',
-        'user_id',
-        'name',
-        'faculty',
-        'student_class',
-        'biography',
-        'photo_path',
-        'position_number',
-        'status',
-        'manual_votes'
+        'category_id', 
+        'name', 
+        'registration_number', 
+        'image_path', 
+        'manifesto', 
+        'faculty'
     ];
 
-    protected $appends = ['total_votes'];
-
-    public function getTotalVotesAttribute()
-    {
-        $realVotes = $this->votes_count ?? $this->votes()->count();
-        return $realVotes + ($this->manual_votes ?? 0);
-    }
-
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function votes()
+    public function votes(): HasMany
     {
         return $this->hasMany(Vote::class);
     }

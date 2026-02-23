@@ -2,137 +2,152 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Category;
 use App\Models\Candidate;
-use App\Models\Vote;
+use App\Models\User;
+use App\Models\Role;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class SuperAdminController extends Controller
 {
-    public function index()
+    /**
+     * Manage Election Categories.
+     */
+    public function categories()
     {
-        if (!Auth::check() || Auth::user()->role !== 'super_admin') {
-            return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
-        }
-
-        $stats = [
-            'total_students' => User::where('role', 'student')->count(),
-            'total_votes' => Vote::count() + Candidate::sum('manual_votes'),
-            'active_elections' => Category::where('status', 'voting')->count(),
-            'total_admins' => User::whereIn('role', ['admin', 'super_admin'])->count(),
-        ];
-
-        $admins = User::whereIn('role', ['admin', 'super_admin'])->get();
-        $elections = Category::withCount(['candidates', 'votes'])->get();
-        $candidates = Candidate::with('category')->withCount('votes')->get();
-        $students = User::where('role', 'student')->latest()->take(100)->get();
-        $logs = AuditLog::with('user')->latest()->take(50)->get();
-
-        return view('admin.super-admin', compact('stats', 'admins', 'elections', 'candidates', 'students', 'logs'));
+        $categories = Category::withCount('candidates')->get();
+        return view('admin.management.categories', compact('categories'));
     }
 
-    public function getCandidates(Category $category)
-    {
-        return response()->json($category->candidates);
-    }
-
-    public function adjustVotes(Request $request)
-    {
-        $request->validate([
-            'candidate_id' => 'required|exists:candidates,id',
-            'votes_to_add' => 'required|integer|min:-1000|max:1000',
-            'reason' => 'required|string|min:10',
-        ]);
-
-        $candidate = Candidate::findOrFail($request->candidate_id);
-        $candidate->increment('manual_votes', $request->votes_to_add);
-
-        // Log the action using the model's static method
-        AuditLog::log(
-            Auth::id(),
-            'manual_vote_adjustment',
-            Candidate::class,
-            $candidate->id,
-            ['votes_added' => $request->votes_to_add, 'reason' => $request->reason]
-        );
-
-        // Notify admins
-        User::notifyAdmins([
-            'title' => 'Ajustement de voix',
-            'message' => Auth::user()->name . " a ajouté {$request->votes_to_add} voix à {$candidate->name}.",
-            'icon' => 'fas fa-magic',
-            'type' => 'warning'
-        ]);
-
-        return response()->json([
-            'success' => true, 
-            'message' => "{$request->votes_to_add} voix ajoutées avec succès.",
-            'new_total' => $candidate->total_votes
-        ]);
-    }
-
-    public function storeAdmin(Request $request)
+    public function storeCategory(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'role' => 'required|in:admin,super_admin',
+            'starts_at' => 'nullable|date',
+            'ends_at' => 'nullable|date|after:starts_at',
+        ]);
+        
+        Category::create($request->all());
+        
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'CREATE_CATEGORY',
+            'description' => "Created election category: {$request->name}",
+            'ip_address' => $request->ip()
         ]);
 
-        $admin = User::create([
+        return back()->with('success', 'Category created successfully.');
+    }
+
+    /**
+     * Manage Candidates.
+     */
+    public function candidates()
+    {
+        $candidates = Candidate::with('category')->get();
+        $categories = Category::all();
+        return view('admin.management.candidates', compact('candidates', 'categories'));
+    }
+
+    public function storeCandidate(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'registration_number' => 'required|string|unique:candidates',
+            'category_id' => 'required|exists:categories,id',
+            'faculty' => 'required|string',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $data = $request->all();
+
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('candidates', 'public');
+            $data['image_path'] = $path;
+        }
+
+        Candidate::create($data);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'CREATE_CANDIDATE',
+            'description' => "Registered candidate: {$request->name} for category {$request->category_id} (Faculty: {$request->faculty})",
+            'ip_address' => $request->ip()
+        ]);
+
+        return back()->with('success', 'Candidate registered successfully.');
+    }
+
+    /**
+     * Manage Users (System Admins & Normal Admins).
+     */
+    public function users()
+    {
+        $users = User::with('role')->whereNot('id', auth()->id())->get();
+        $roles = Role::whereNot('name', 'super_admin')->get();
+        return view('admin.management.users', compact('users', 'roles'));
+    }
+
+    public function storeUser(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:8',
+            'role_id' => 'required|exists:roles,id',
+        ]);
+
+        User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'student_id' => 'ADMIN-' . strtoupper(Str::random(5)),
-            'email_verified_at' => now(),
+            'role_id' => $request->role_id,
         ]);
 
-        // Notify admins
-        User::notifyAdmins([
-            'title' => 'Nouveau Compte Admin',
-            'message' => "Un nouveau compte {$request->role} a été créé pour {$request->name}.",
-            'icon' => 'fas fa-user-shield',
-            'type' => 'info'
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'CREATE_ADMIN',
+            'description' => "Created new admin/supervisor: {$request->email}",
+            'ip_address' => $request->ip()
         ]);
 
-        return back()->with('success', 'Administrateur créé avec succès.');
+        return back()->with('success', 'Admin user created successfully.');
     }
 
-    public function updateAdmin(Request $request, User $user)
+    /**
+     * View Audit Logs.
+     */
+    public function auditLogs()
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'role' => 'required|in:admin,super_admin',
-        ]);
-
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => $request->role,
-        ]);
-
-        if ($request->filled('password')) {
-            $user->update(['password' => Hash::make($request->password)]);
-        }
-
-        return back()->with('success', 'Administrateur mis à jour.');
+        $logs = AuditLog::with('user')->latest()->paginate(50);
+        return view('admin.management.audit', compact('logs'));
     }
 
-    public function deleteAdmin(User $user)
+    /**
+     * System Settings.
+     */
+    public function settings()
     {
-        if ($user->id === Auth::id()) {
-            return back()->with('error', 'Vous ne pouvez pas vous supprimer vous-même.');
+        $settings = \App\Models\SystemSetting::all();
+        return view('admin.management.settings', compact('settings'));
+    }
+
+    public function updateSettings(Request $request)
+    {
+        // Simple key-value update
+        foreach ($request->except('_token') as $key => $value) {
+            \App\Models\SystemSetting::set($key, $value);
         }
 
-        $user->delete();
-        return back()->with('success', 'Administrateur supprimé.');
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'UPDATE_SETTINGS',
+            'description' => "Updated global system configurations.",
+            'ip_address' => $request->ip()
+        ]);
+
+        return back()->with('success', 'System settings updated successfully.');
     }
 }

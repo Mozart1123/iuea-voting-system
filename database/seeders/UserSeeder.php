@@ -19,7 +19,6 @@ class UserSeeder extends Seeder
             [
                 'name' => 'System Admin',
                 'password' => Hash::make('123456789'),
-                'role' => 'admin',
                 'is_admin' => true,
                 'email_verified_at' => now(),
             ]
@@ -32,7 +31,6 @@ class UserSeeder extends Seeder
                 'name' => 'Joseph Tshimanga',
                 'student_id' => '23/U/1234/EVE', // Example ID
                 'password' => Hash::make('123456789'),
-                'role' => 'student',
                 'faculty' => 'Technology',
                 'year_of_study' => 3,
                 'email_verified_at' => now(),

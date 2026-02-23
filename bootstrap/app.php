@@ -13,13 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'nomination.access' => \App\Http\Middleware\CheckNominationAccess::class,
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            'throttle.vote' => \App\Http\Middleware\ThrottleVotes::class,
+            'role' => \App\Http\Middleware\RolePermissionMiddleware::class,
+            'voter.check' => \App\Http\Middleware\EnsureVoterNotExists::class,
+            'prevent.back' => \App\Http\Middleware\PreventBackHistory::class,
         ]);
         
-        // Global middleware stack
-        $middleware->append(\App\Http\Middleware\LogAuditTrail::class);
+        $middleware->validateCsrfTokens(except: []);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
