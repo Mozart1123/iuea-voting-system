@@ -75,11 +75,7 @@
         </div>
         
         <div class="relative z-10 text-white/60 text-sm mt-12">
-<<<<<<< HEAD
-            © 2026 IUEA – New Kiosk System
-=======
             © 2026 IUEA – Official voting platform
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
         </div>
     </div>
 
@@ -91,9 +87,6 @@
                 <p class="text-gray-500">Log in to access the administrative dashboard.</p>
             </div>
             
-<<<<<<< HEAD
-            <form action="{{ route('login') }}" method="POST" class="space-y-6">
-=======
             <!-- Flash Messages -->
             @if(session('success'))
                 <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl flex items-start gap-3">
@@ -118,7 +111,6 @@
 
             <!-- login form -->
             <form id="auth-form" action="{{ route('login') }}" method="POST" class="space-y-6">
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
                 @csrf
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Username or Email</label>
@@ -154,8 +146,6 @@
                 <button type="submit" class="w-full bg-primary text-white font-bold py-3.5 px-4 rounded-xl shadow-md hover:bg-primary-dark transition duration-200 flex items-center justify-center gap-2">
                     <i class="fas fa-sign-in-alt"></i> Log In
                 </button>
-<<<<<<< HEAD
-=======
                 
                 <!-- SSO / callout -->
                 <div class="relative my-6">
@@ -181,7 +171,6 @@
                         Secure login • CSRF protected • RSA-4096 Encrypted
                     </p>
                 </div>
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
             </form>
             
             <div class="mt-10 pt-6 border-t border-gray-100 text-gray-400 text-xs text-center">

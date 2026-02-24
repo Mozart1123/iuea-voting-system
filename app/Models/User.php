@@ -15,16 +15,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-<<<<<<< HEAD
         'role_id',
-=======
-        'role',
-        'is_admin',
         'profile_photo',
         'google_id',
         'otp_code',
         'otp_expires_at',
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
     ];
 
     protected $hidden = [

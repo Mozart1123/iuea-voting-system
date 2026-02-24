@@ -21,30 +21,40 @@ class SuperAdminController extends Controller
         return view('admin.management.categories', compact('categories'));
     }
 
-<<<<<<< HEAD
-    public function storeCategory(Request $request)
+    public function storeUser(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'starts_at' => 'nullable|date',
-            'ends_at' => 'nullable|date|after:starts_at',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8',
+            'role_id' => 'required|exists:roles,id',
+            'profile_photo' => 'nullable|image|max:2048',
         ]);
-        
-        Category::create($request->all());
-        
+
+        $photoPath = null;
+        if ($request->hasFile('profile_photo')) {
+            $photoPath = $request->file('profile_photo')->store('profiles', 'public');
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role_id' => $request->role_id,
+            'profile_photo' => $photoPath,
+            'email_verified_at' => now(),
+        ]);
+
         AuditLog::create([
             'user_id' => auth()->id(),
-            'action' => 'CREATE_CATEGORY',
-            'description' => "Created election category: {$request->name}",
+            'action' => 'CREATE_ADMIN',
+            'description' => "Created new admin/supervisor: {$request->email}",
             'ip_address' => $request->ip()
         ]);
 
-        return back()->with('success', 'Category created successfully.');
+        return back()->with('success', 'Administrator created successfully.');
     }
 
-    /**
-     * Manage Candidates.
-     */
     public function candidates()
     {
         $candidates = Candidate::with('category')->get();
@@ -74,7 +84,7 @@ class SuperAdminController extends Controller
         AuditLog::create([
             'user_id' => auth()->id(),
             'action' => 'CREATE_CANDIDATE',
-            'description' => "Registered candidate: {$request->name} for category {$request->category_id} (Faculty: {$request->faculty})",
+            'description' => "Registered candidate: {$request->name} for category {$request->category_id}",
             'ip_address' => $request->ip()
         ]);
 
@@ -82,91 +92,20 @@ class SuperAdminController extends Controller
     }
 
     /**
-     * Manage Users (System Admins & Normal Admins).
-     */
-    public function users()
-    {
-        $users = User::with('role')->whereNot('id', auth()->id())->get();
-        $roles = Role::whereNot('name', 'super_admin')->get();
-        return view('admin.management.users', compact('users', 'roles'));
-    }
-
-    public function storeUser(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:8',
-            'role_id' => 'required|exists:roles,id',
-        ]);
-
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role_id' => $request->role_id,
-        ]);
-
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'CREATE_ADMIN',
-            'description' => "Created new admin/supervisor: {$request->email}",
-            'ip_address' => $request->ip()
-        ]);
-
-        return back()->with('success', 'Admin user created successfully.');
-=======
-
-    public function storeAdmin(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'role' => 'required|in:admin,super_admin',
-            'profile_photo' => 'nullable|image|max:2048',
-        ]);
-
-        $photoPath = null;
-        if ($request->hasFile('profile_photo')) {
-            $photoPath = $request->file('profile_photo')->store('profiles', 'public');
-        }
-
-        $admin = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'profile_photo' => $photoPath,
-            'student_id' => 'ADMIN-' . strtoupper(Str::random(5)),
-            'email_verified_at' => now(),
-        ]);
-
-        // Notify admins
-        User::notifyAdmins([
-            'title' => 'New Admin Account',
-            'message' => "A new {$request->role} account has been created for {$request->name}.",
-            'icon' => 'fas fa-user-shield',
-            'type' => 'info'
-        ]);
-
-        return back()->with('success', 'Administrator created successfully.');
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
-    }
-
-    /**
      * View Audit Logs.
      */
     public function auditLogs()
     {
-<<<<<<< HEAD
         $logs = AuditLog::with('user')->latest()->paginate(50);
         return view('admin.management.audit', compact('logs'));
-=======
+    }
+
+    public function updateUser(Request $request, User $user)
+    {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'role' => 'required|in:admin,super_admin',
+            'role_id' => 'required|exists:roles,id',
             'profile_photo' => 'nullable|image|max:2048',
         ]);
 
@@ -181,7 +120,7 @@ class SuperAdminController extends Controller
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
-            'role' => $request->role,
+            'role_id' => $request->role_id,
         ]);
 
         if ($request->filled('password')) {
@@ -189,7 +128,6 @@ class SuperAdminController extends Controller
         }
 
         return back()->with('success', 'Administrator updated.');
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
     }
 
     /**
@@ -197,7 +135,6 @@ class SuperAdminController extends Controller
      */
     public function settings()
     {
-<<<<<<< HEAD
         $settings = \App\Models\SystemSetting::all();
         return view('admin.management.settings', compact('settings'));
     }
@@ -206,7 +143,7 @@ class SuperAdminController extends Controller
     {
         // Simple key-value update
         foreach ($request->except('_token') as $key => $value) {
-            \App\Models\SystemSetting::set($key, $value);
+            \App\Models\SystemSetting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
 
         AuditLog::create([
@@ -217,13 +154,15 @@ class SuperAdminController extends Controller
         ]);
 
         return back()->with('success', 'System settings updated successfully.');
-=======
+    }
+
+    public function deleteUser(User $user)
+    {
         if ($user->id === Auth::id()) {
             return back()->with('error', 'You cannot delete yourself.');
         }
 
         $user->delete();
         return back()->with('success', 'Administrator deleted.');
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
     }
 }

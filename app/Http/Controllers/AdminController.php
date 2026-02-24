@@ -17,18 +17,16 @@ class AdminController extends Controller
      */
     public function dashboard()
     {
-<<<<<<< HEAD
         $user = Auth::user();
-=======
-        // Check if user is admin
-        if (!Auth::check() || (Auth::user()->role !== 'admin' && Auth::user()->role !== 'super_admin')) {
+
+        // Check if user is admin or super_admin using the relation/helper
+        if (!$user->hasRole(['normal_admin', 'system_admin', 'super_admin'])) {
             return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
         }
 
-        $totalVoters = \App\Models\User::where('role', 'student')->count();
+        $totalVoters = \App\Models\User::whereHas('role', function($q) { $q->where('name', 'student'); })->count();
         $votesCount = \App\Models\Vote::count();
         $turnout = $totalVoters > 0 ? round(($votesCount / $totalVoters) * 100, 1) : 0;
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
         
         // Dynamic aggregation for Super Admin cards
         $presidentCategory = Category::where('name', 'LIKE', '%President%')->first();
@@ -67,17 +65,12 @@ class AdminController extends Controller
      */
     public function activityFeed()
     {
-<<<<<<< HEAD
-        $votes = Voter::latest()->paginate(20);
-        return view('admin.activity-feed', compact('votes'));
-=======
-        if (!Auth::check() || (Auth::user()->role !== 'admin' && Auth::user()->role !== 'super_admin')) {
+        if (!Auth::check() || !Auth::user()->hasRole(['normal_admin', 'system_admin', 'super_admin'])) {
             return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
         }
 
         $categories = \App\Models\Category::withCount('candidates')->get();
         return view('admin.elections', compact('categories'));
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
     }
 
     /**
@@ -85,29 +78,27 @@ class AdminController extends Controller
      */
     public function ballotPreview()
     {
-<<<<<<< HEAD
+        if (!Auth::check() || !Auth::user()->hasRole(['normal_admin', 'system_admin', 'super_admin'])) {
+            return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
+        }
+
         $categories = Category::where('is_active', true)
             ->with('candidates')
             ->get();
-=======
-        if (!Auth::check() || (Auth::user()->role !== 'admin' && Auth::user()->role !== 'super_admin')) {
-            return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
-        }
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
 
         // Simulate session data for design preview
         session()->flash('voter_name', 'DESIGN PREVIEW MODE');
         session()->flash('voter_reg', 'EC/2026/PROTOTYPE');
 
-<<<<<<< HEAD
         return view('voter.ballot', compact('categories'));
-=======
+    }
+
     /**
      * Nominate a new candidate directly.
      */
     public function storeCandidate(Request $request)
     {
-        if (!Auth::check() || (Auth::user()->role !== 'admin' && Auth::user()->role !== 'super_admin')) {
+        if (!Auth::check() || !Auth::user()->hasRole(['normal_admin', 'system_admin', 'super_admin'])) {
             return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
         }
 
@@ -129,6 +120,7 @@ class AdminController extends Controller
         \App\Models\Candidate::create([
             'category_id' => $request->category_id,
             'name' => $request->name,
+            'registration_number' => 'REG-' . strtoupper(\Illuminate\Support\Str::random(6)), // Default if missing
             'faculty' => $request->faculty,
             'student_class' => $request->student_class,
             'biography' => $request->biography,
@@ -137,11 +129,12 @@ class AdminController extends Controller
             'status' => 'approved' // Direct admin nominations are approved by default
         ]);
 
-        User::notifyAdmins([
-            'title' => 'New Candidate',
-            'message' => "Candidate {$request->name} has been registered by admin.",
-            'icon' => 'fas fa-user-plus',
-            'type' => 'success'
+        // Use User model directly if it has notifyAdmins, or manual notification
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'CREATE_CANDIDATE',
+            'description' => "Candidate {$request->name} has been registered by admin.",
+            'ip_address' => $request->ip()
         ]);
 
         return back()->with('success', 'Candidate "' . $request->name . '" has been nominated successfully.');
@@ -152,11 +145,11 @@ class AdminController extends Controller
      */
     public function voters()
     {
-        if (!Auth::check() || (Auth::user()->role !== 'admin' && Auth::user()->role !== 'super_admin')) {
+        if (!Auth::check() || !Auth::user()->hasRole(['normal_admin', 'system_admin', 'super_admin'])) {
             return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
         }
 
-        $voters = User::where('role', 'student')->latest()->paginate(20);
+        $voters = User::whereHas('role', function($q) { $q->where('name', 'student'); })->latest()->paginate(20);
         return view('admin.voters', compact('voters'));
     }
 
@@ -165,7 +158,7 @@ class AdminController extends Controller
      */
     public function settings()
     {
-        if (!Auth::check() || (Auth::user()->role !== 'admin' && Auth::user()->role !== 'super_admin')) {
+        if (!Auth::check() || !Auth::user()->hasRole(['normal_admin', 'system_admin', 'super_admin'])) {
             return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
         }
 
@@ -175,7 +168,7 @@ class AdminController extends Controller
 
     public function updateSettings(Request $request)
     {
-        if (!Auth::check() || (Auth::user()->role !== 'admin' && Auth::user()->role !== 'super_admin')) {
+        if (!Auth::check() || !Auth::user()->hasRole(['normal_admin', 'system_admin', 'super_admin'])) {
             return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
         }
 
@@ -198,7 +191,7 @@ class AdminController extends Controller
      */
     public function updateCategoryStatus(Request $request, \App\Models\Category $category)
     {
-        if (!Auth::check() || Auth::user()->role !== 'admin') {
+        if (!Auth::check() || !Auth::user()->hasRole(['normal_admin', 'system_admin', 'super_admin'])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -223,13 +216,6 @@ class AdminController extends Controller
 
         $category->update($updateData);
 
-        User::notifyAdmins([
-            'title' => 'Election Status Updated',
-            'message' => "Election {$category->name} is now in status: {$request->status}.",
-            'icon' => 'fas fa-poll',
-            'type' => 'info'
-        ]);
-
         return back()->with('success', 'Election status for ' . $category->name . ' updated to ' . $request->status);
     }
 
@@ -238,7 +224,7 @@ class AdminController extends Controller
      */
     public function updateCandidateStatus(Request $request, \App\Models\Candidate $candidate)
     {
-        if (!Auth::check() || Auth::user()->role !== 'admin') {
+        if (!Auth::check() || !Auth::user()->hasRole(['normal_admin', 'system_admin', 'super_admin'])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -248,13 +234,6 @@ class AdminController extends Controller
 
         $candidate->update(['status' => $request->status]);
 
-        User::notifyAdmins([
-            'title' => 'Candidate ' . ucfirst($request->status),
-            'message' => "The candidacy of {$candidate->name} has been " . ($request->status == 'approved' ? 'approved' : 'rejected') . ".",
-            'icon' => $request->status == 'approved' ? 'fas fa-check-circle' : 'fas fa-times-circle',
-            'type' => $request->status == 'approved' ? 'success' : 'danger'
-        ]);
-
         return back()->with('success', 'Candidate ' . $candidate->name . ' has been ' . $request->status);
     }
 
@@ -263,7 +242,7 @@ class AdminController extends Controller
      */
     public function storeCategory(Request $request)
     {
-        if (!Auth::check() || (Auth::user()->role !== 'admin' && Auth::user()->role !== 'super_admin')) {
+        if (!Auth::check() || !Auth::user()->hasRole(['normal_admin', 'system_admin', 'super_admin'])) {
             return redirect()->route('dashboard.index')->with('error', 'Unauthorized access.');
         }
 
@@ -279,13 +258,6 @@ class AdminController extends Controller
             'faculty_restriction' => $request->faculty_restriction,
             'status' => 'closed',
             'is_active' => false,
-        ]);
-
-        User::notifyAdmins([
-            'title' => 'New Election',
-            'message' => "A new election has been created: {$request->name}.",
-            'icon' => 'fas fa-vote-yea',
-            'type' => 'info'
         ]);
 
         return back()->with('success', 'New election category "' . $request->name . '" created successfully.');
@@ -312,7 +284,6 @@ class AdminController extends Controller
     {
         Auth::user()->unreadNotifications->markAsRead();
         return response()->json(['success' => true]);
->>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
     }
 
     /**
