@@ -21,6 +21,7 @@ class SuperAdminController extends Controller
         return view('admin.management.categories', compact('categories'));
     }
 
+<<<<<<< HEAD
     public function storeCategory(Request $request)
     {
         $request->validate([
@@ -114,6 +115,43 @@ class SuperAdminController extends Controller
         ]);
 
         return back()->with('success', 'Admin user created successfully.');
+=======
+
+    public function storeAdmin(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8',
+            'role' => 'required|in:admin,super_admin',
+            'profile_photo' => 'nullable|image|max:2048',
+        ]);
+
+        $photoPath = null;
+        if ($request->hasFile('profile_photo')) {
+            $photoPath = $request->file('profile_photo')->store('profiles', 'public');
+        }
+
+        $admin = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+            'profile_photo' => $photoPath,
+            'student_id' => 'ADMIN-' . strtoupper(Str::random(5)),
+            'email_verified_at' => now(),
+        ]);
+
+        // Notify admins
+        User::notifyAdmins([
+            'title' => 'New Admin Account',
+            'message' => "A new {$request->role} account has been created for {$request->name}.",
+            'icon' => 'fas fa-user-shield',
+            'type' => 'info'
+        ]);
+
+        return back()->with('success', 'Administrator created successfully.');
+>>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
     }
 
     /**
@@ -121,8 +159,37 @@ class SuperAdminController extends Controller
      */
     public function auditLogs()
     {
+<<<<<<< HEAD
         $logs = AuditLog::with('user')->latest()->paginate(50);
         return view('admin.management.audit', compact('logs'));
+=======
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'role' => 'required|in:admin,super_admin',
+            'profile_photo' => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('profile_photo')) {
+            // Delete old photo if exists
+            if ($user->profile_photo && \Storage::disk('public')->exists($user->profile_photo)) {
+                \Storage::disk('public')->delete($user->profile_photo);
+            }
+            $user->profile_photo = $request->file('profile_photo')->store('profiles', 'public');
+        }
+
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'role' => $request->role,
+        ]);
+
+        if ($request->filled('password')) {
+            $user->update(['password' => Hash::make($request->password)]);
+        }
+
+        return back()->with('success', 'Administrator updated.');
+>>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
     }
 
     /**
@@ -130,6 +197,7 @@ class SuperAdminController extends Controller
      */
     public function settings()
     {
+<<<<<<< HEAD
         $settings = \App\Models\SystemSetting::all();
         return view('admin.management.settings', compact('settings'));
     }
@@ -149,5 +217,13 @@ class SuperAdminController extends Controller
         ]);
 
         return back()->with('success', 'System settings updated successfully.');
+=======
+        if ($user->id === Auth::id()) {
+            return back()->with('error', 'You cannot delete yourself.');
+        }
+
+        $user->delete();
+        return back()->with('success', 'Administrator deleted.');
+>>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
     }
 }

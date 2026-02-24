@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IUEA GuildVote • Live Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        :root {
+            --primary: #8B0000;
+            --primary-dark: #6B0000;
+            --primary-light: #A52A2A;
+            --primary-soft: rgba(139, 0, 0, 0.05);
+        }
+
+        body {
+            background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+            min-height: 100vh;
+        }
+
+        .glass-header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #eef2f6;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.15);
+            border: 1px solid #eef2f6;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .category-card.fade-out {
+            opacity: 0;
+        }
+
+        .progress-bar {
+            height: 0.75rem;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 0.5rem 0 0.25rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 999px;
+            transition: width 0.5s ease;
+        }
+
+        .candidate-photo {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+            box-shadow: 0 8px 16px -4px rgba(139, 0, 0, 0.2);
+            pointer-events: none;
+            -webkit-user-drag: none;
+            user-select: none;
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #d1d5db;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-dot.active {
+            background: var(--primary);
+            transform: scale(1.3);
+        }
+
+        .nav-dot:hover {
+            background: var(--primary-light);
+        }
+
+        .timer-bar {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 100%;
+            transition: width linear;
+        }
+
+        .footer-links a {
+            color: #6b7280;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="glass-header sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <img src="https://iuea.ac.ug/sitepad-data/uploads/2024/07/IUEA-Logo-official-1.png" alt="IUEA Logo"
+                        class="h-12 w-auto object-contain">
+                    <span class="text-xl font-bold text-gray-800">GuildVote</span>
+                </div>
+                <span
+                    class="badge-live bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                    <i class="fas fa-circle text-xs"></i> LIVE
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <!-- Global Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="stat-card">
+                <p class="text-gray-500 text-sm">Total Votes</p>
+                <p class="text-3xl font-bold text-gray-900 mt-2" id="totalVotes">12,458</p>
+            </div>
+            <div class="stat-card">
+                <p class="text-gray-500 text-sm">Turnout</p>
+                <p class="text-3xl font-bold text-gray-900 mt-2" id="turnout">65%</p>
+            </div>
+            <div class="stat-card">
+                <p class="text-gray-500 text-sm">Status</p>
+                <p class="text-3xl font-bold text-green-600 mt-2" id="status">ACTIVE</p>
+            </div>
+        </div>
+
+        <!-- Navigation and timer -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <h2 id="currentCategoryName" class="text-2xl font-bold text-gray-800">Loading...</h2>
+            <div class="flex items-center gap-4">
+                <button id="prevBtn"
+                    class="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div id="navDots" class="flex gap-2"></div>
+                <button id="nextBtn"
+                    class="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Timer progress bar -->
+        <div class="timer-bar mb-8">
+            <div id="timerFill" class="timer-fill" style="width: 100%;"></div>
+        </div>
+
+        <!-- Category container -->
+        <div id="categoryContainer" class="category-card">
+            <!-- Injected by JS -->
+        </div>
+
+        <!-- Footer -->
+        <footer
+            class="mt-16 pt-8 border-t border-gray-200 flex flex-wrap justify-between items-center text-sm text-gray-500">
+            <p>© 2026 IUEA Guild. All Rights Reserved.</p>
+            <div class="footer-links flex gap-6">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Use</a>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Candidate template -->
+    <template id="candidateTemplate">
+        <div class="flex items-start gap-4 py-3 border-b border-gray-100 last:border-0">
+            <img src="" alt="Photo" class="candidate-photo" draggable="false" oncontextmenu="return false;">
+            <div class="flex-1">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-gray-800 candidate-name"></span>
+                    <span class="font-bold text-gray-900 candidate-votes"></span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%;"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                    <span class="candidate-percentage"></span>
+                    <span class="candidate-votes-short"></span> votes
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        (function () {
+            // ========== MOCKED DATA ==========
+            const electionsData = [
+                {
+                    id: 1,
+                    name: "Guild President",
+                    candidates: [
+                        { id: 101, name: "Sarah A. Johnson", photo: "https://randomuser.me/api/portraits/women/44.jpg", votes: 5607 },
+                        { id: 102, name: "David K. Omondi", photo: "https://randomuser.me/api/portraits/men/32.jpg", votes: 3738 },
+                        { id: 103, name: "Mary N. Mbabazi", photo: "https://randomuser.me/api/portraits/women/68.jpg", votes: 3113 }
+                    ]
+                },
+                {
+                    id: 2,
+                    name: "Faculty of Science & Tech.",
+                    candidates: [
+                        { id: 201, name: "John Peter Okello", photo: "https://randomuser.me/api/portraits/men/75.jpg", votes: 1375 },
+                        { id: 202, name: "Grace C. Nakato", photo: "https://randomuser.me/api/portraits/women/90.jpg", votes: 1125 }
+                    ]
+                },
+                {
+                    id: 3,
+                    name: "Faculty of Law",
+                    candidates: [
+                        { id: 301, name: "Brian F. Kayanja", photo: "https://randomuser.me/api/portraits/men/52.jpg", votes: 750 },
+                        { id: 302, name: "Alice G. Namaganda", photo: "https://randomuser.me/api/portraits/women/55.jpg", votes: 500 }
+                    ]
+                },
+                {
+                    id: 4,
+                    name: "Guild Speaker",
+                    candidates: [
+                        { id: 401, name: "James E. Mulindwa", photo: "https://randomuser.me/api/portraits/men/86.jpg", votes: 6229 },
+                        { id: 402, name: "Rebecca W. Tumwine", photo: "https://randomuser.me/api/portraits/women/33.jpg", votes: 6229 }
+                    ]
+                },
+                {
+                    id: 5,
+                    name: "Student Representative",
+                    candidates: [
+                        { id: 501, name: "Paul K. Ssali", photo: "https://randomuser.me/api/portraits/men/22.jpg", votes: 2100 },
+                        { id: 502, name: "Janet N. Nanyonjo", photo: "https://randomuser.me/api/portraits/women/47.jpg", votes: 1800 }
+                    ]
+                }
+            ];
+
+            const globalStats = {
+                totalVotes: 12458,
+                turnout: 65,
+                status: "ACTIVE"
+            };
+
+            let currentIndex = 0;
+            let autoTimer = null;
+            const AUTO_SWITCH_TIME = 3 * 60 * 1000;
+            const UPDATE_INTERVAL = 8000;
+
+            const container = document.getElementById('categoryContainer');
+            const categoryNameEl = document.getElementById('currentCategoryName');
+            const totalVotesEl = document.getElementById('totalVotes');
+            const turnoutEl = document.getElementById('turnout');
+            const statusEl = document.getElementById('status');
+            const navDots = document.getElementById('navDots');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const timerFill = document.getElementById('timerFill');
+            const candidateTemplate = document.getElementById('candidateTemplate');
+
+            totalVotesEl.textContent = globalStats.totalVotes.toLocaleString();
+            turnoutEl.textContent = globalStats.turnout + '%';
+            statusEl.textContent = globalStats.status;
+
+            function computePercentages(election) {
+                const total = election.candidates.reduce((sum, c) => sum + c.votes, 0);
+                election.candidates.forEach(c => {
+                    c.percentage = total > 0 ? (c.votes / total * 100).toFixed(1) : 0;
+                });
+                election.candidates.sort((a, b) => b.votes - a.votes);
+            }
+
+            electionsData.forEach(computePercentages);
+
+            function renderCategory(index) {
+                const election = electionsData[index];
+                if (!election) return;
+
+                categoryNameEl.textContent = election.name;
+                container.innerHTML = '';
+
+                election.candidates.forEach(candidate => {
+                    const clone = candidateTemplate.content.cloneNode(true);
+                    const img = clone.querySelector('img');
+                    img.src = candidate.photo;
+                    img.alt = candidate.name;
+                    clone.querySelector('.candidate-name').textContent = candidate.name;
+                    clone.querySelector('.candidate-votes').textContent = candidate.votes.toLocaleString() + ' votes';
+                    clone.querySelector('.candidate-votes-short').textContent = candidate.votes.toLocaleString();
+                    clone.querySelector('.candidate-percentage').textContent = candidate.percentage + '%';
+                    const fill = clone.querySelector('.progress-fill');
+                    fill.style.width = candidate.percentage + '%';
+                    container.appendChild(clone);
+                });
+
+                updateNavDots(index);
+            }
+
+            function updateNavDots(activeIndex) {
+                navDots.innerHTML = '';
+                electionsData.forEach((_, i) => {
+                    const dot = document.createElement('div');
+                    dot.className = `nav-dot ${i === activeIndex ? 'active' : ''}`;
+                    dot.addEventListener('click', () => switchToIndex(i));
+                    navDots.appendChild(dot);
+                });
+            }
+
+            function switchToIndex(newIndex, skipTransition = false) {
+                if (newIndex < 0) newIndex = electionsData.length - 1;
+                if (newIndex >= electionsData.length) newIndex = 0;
+                if (newIndex === currentIndex) return;
+
+                if (!skipTransition) {
+                    container.classList.add('fade-out');
+                    setTimeout(() => {
+                        currentIndex = newIndex;
+                        renderCategory(currentIndex);
+                        container.classList.remove('fade-out');
+                        resetTimer();
+                    }, 400);
+                } else {
+                    currentIndex = newIndex;
+                    renderCategory(currentIndex);
+                    resetTimer();
+                }
+            }
+
+            function resetTimer() {
+                if (autoTimer) clearTimeout(autoTimer);
+                timerFill.style.transition = 'none';
+                timerFill.style.width = '100%';
+                timerFill.offsetHeight;
+                timerFill.style.transition = `width ${AUTO_SWITCH_TIME}ms linear`;
+                timerFill.style.width = '0%';
+
+                autoTimer = setTimeout(() => {
+                    switchToIndex(currentIndex + 1);
+                }, AUTO_SWITCH_TIME);
+            }
+
+            function updateData() {
+                electionsData.forEach(election => {
+                    election.candidates.forEach(c => {
+                        const delta = Math.floor(Math.random() * 7) - 3;
+                        c.votes = Math.max(0, c.votes + delta);
+                    });
+                    computePercentages(election);
+                });
+                const total = electionsData.reduce((sum, e) => sum + e.candidates.reduce((s, c) => s + c.votes, 0), 0);
+                globalStats.totalVotes = total;
+                totalVotesEl.textContent = total.toLocaleString();
+                globalStats.turnout = Math.min(85, Math.max(50, globalStats.turnout + (Math.random() - 0.5) * 2));
+                turnoutEl.textContent = globalStats.turnout.toFixed(0) + '%';
+
+                renderCategory(currentIndex);
+            }
+
+            prevBtn.addEventListener('click', () => switchToIndex(currentIndex - 1));
+            nextBtn.addEventListener('click', () => switchToIndex(currentIndex + 1));
+
+            setInterval(updateData, UPDATE_INTERVAL);
+            renderCategory(0);
+            resetTimer();
+
+            document.addEventListener('contextmenu', function (e) {
+                if (e.target.tagName === 'IMG') e.preventDefault();
+            });
+        })();
+    </script>
+</body>
+
+</html>

@@ -15,7 +15,16 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+<<<<<<< HEAD
         'role_id',
+=======
+        'role',
+        'is_admin',
+        'profile_photo',
+        'google_id',
+        'otp_code',
+        'otp_expires_at',
+>>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
     ];
 
     protected $hidden = [
@@ -59,5 +68,22 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->hasRole(['super_admin', 'system_admin', 'normal_admin']);
+    }
+
+    /**
+     * Get the user's profile photo URL.
+     */
+    public function getProfilePhotoUrlAttribute()
+    {
+        if ($this->profile_photo) {
+            if (filter_var($this->profile_photo, FILTER_VALIDATE_URL)) {
+                return $this->profile_photo;
+            }
+            return asset('storage/' . $this->profile_photo);
+        }
+
+        // Fallback to Gravatar based on email
+        $hash = md5(strtolower(trim($this->email)));
+        return "https://www.gravatar.com/avatar/{$hash}?s=200&d=mp";
     }
 }

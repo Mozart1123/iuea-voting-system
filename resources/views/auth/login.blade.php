@@ -75,7 +75,11 @@
         </div>
         
         <div class="relative z-10 text-white/60 text-sm mt-12">
+<<<<<<< HEAD
             © 2026 IUEA – New Kiosk System
+=======
+            © 2026 IUEA – Official voting platform
+>>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
         </div>
     </div>
 
@@ -87,7 +91,34 @@
                 <p class="text-gray-500">Log in to access the administrative dashboard.</p>
             </div>
             
+<<<<<<< HEAD
             <form action="{{ route('login') }}" method="POST" class="space-y-6">
+=======
+            <!-- Flash Messages -->
+            @if(session('success'))
+                <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-green-800 mb-0.5">Vote Submitted Successfully!</p>
+                        <p class="text-sm text-green-600">{{ session('success') }}</p>
+                    </div>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-red-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-exclamation-circle text-red-600 text-sm"></i>
+                    </div>
+                    <p class="text-sm text-red-600">{{ session('error') }}</p>
+                </div>
+            @endif
+
+            <!-- login form -->
+            <form id="auth-form" action="{{ route('login') }}" method="POST" class="space-y-6">
+>>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
                 @csrf
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Username or Email</label>
@@ -123,6 +154,34 @@
                 <button type="submit" class="w-full bg-primary text-white font-bold py-3.5 px-4 rounded-xl shadow-md hover:bg-primary-dark transition duration-200 flex items-center justify-center gap-2">
                     <i class="fas fa-sign-in-alt"></i> Log In
                 </button>
+<<<<<<< HEAD
+=======
+                
+                <!-- SSO / callout -->
+                <div class="relative my-6">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-100"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-4 bg-white text-gray-500 uppercase tracking-widest text-[10px] font-black">Or continue with</span>
+                    </div>
+                </div>
+
+                <a href="{{ route('auth.google') }}" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 px-4 rounded-xl shadow-sm hover:shadow-md hover:bg-gray-50 transition duration-200 flex items-center justify-center gap-3">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
+                    <span>Sign in with Google</span>
+                </a>
+                
+                <div class="text-center">
+                    <p class="text-gray-600 text-sm">
+                        Don’t have an account? 
+                        <a href="{{ route('register') }}" class="font-semibold text-primary hover:text-primary-dark transition">Register here →</a>
+                    </p>
+                    <p class="text-xs text-gray-400 mt-6">
+                        Secure login • CSRF protected • RSA-4096 Encrypted
+                    </p>
+                </div>
+>>>>>>> b256f79 (Implement profile photos, faculty restrictions, and Google Login integration)
             </form>
             
             <div class="mt-10 pt-6 border-t border-gray-100 text-gray-400 text-xs text-center">
